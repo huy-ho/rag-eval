@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+
+# Virtual environment
+venv/
+
+# Evaluation outputs
+results/
+
+# IDE
+.vscode/
+.idea/
+
+# Tool internals
+.claude/
+.deepeval/
+
+# Legacy one-off output files
+results.csv
+results.xlsx

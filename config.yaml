@@ -1,0 +1,21 @@
+model: mistral
+
+thresholds:
+  faithfulness: 0.65            # highest: hallucinations most harmful in supply chain
+  answer_relevancy: 0.60        # answer must address the question
+  contextual_precision: 0.55    # retrieval quality — harder to control
+  contextual_recall: 0.55       # retrieval coverage — harder to control
+  contextual_relevancy: 0.50    # broadest check, most lenient
+  hallucination: 0.0            # zero-tolerance: any invented fact is a failure
+  supply_chain_specificity: 0.55 # G-Eval: actionable identifiers present?
+  answer_completeness: 0.55     # G-Eval: all context details covered?
+
+output_dir: results
+
+# null = run all cases; set an integer to limit (e.g. max_cases: 3)
+max_cases: null
+
+# null = use built-in mock dataset; set a file path for custom data
+# Supported formats: .csv, .json, .jsonl
+# CSV must have columns: question, answer, contexts (pipe-separated), ground_truth
+data_path: null
