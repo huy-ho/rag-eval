@@ -69,7 +69,7 @@ _DEFAULT_CONFIG: dict = {
         "supply_chain_specificity": 0.55,
         "answer_completeness":      0.55,
     },
-    "output_dir": "results",
+    "output_dir": "output",
     "max_cases":  None,
     "data_path":  None,
 }

@@ -36,7 +36,7 @@ rag-eval/
 ├── mock_data.py      # Built-in 10-record Cisco supply chain dataset
 ├── config.yaml       # All tuneable settings
 ├── requirements.txt
-└── results/          # Auto-created; one timestamped folder per run
+└── output/           # Auto-created; one timestamped folder per run
     └── 20260227_143022/
         ├── results.xlsx   # Full results + failures (two sheets)
         ├── results.json   # Same data, machine-readable
@@ -94,7 +94,7 @@ thresholds:
   supply_chain_specificity: 0.55
   answer_completeness: 0.55
 
-output_dir: results     # where run folders are created
+output_dir: output      # where run folders are created
 
 max_cases: null         # null = run all; set an integer to cap (e.g. 3)
 data_path: null         # null = use built-in mock dataset
@@ -201,7 +201,7 @@ build_results_df()    flattens results into a DataFrame
     ↓
 print_summary()       per-question table + metric stats + failure diagnosis
     ↓
-results/{run_id}/     xlsx + json + run_info.json + eval.log
+output/{run_id}/      xlsx + json + run_info.json + eval.log
 ```
 
 ---

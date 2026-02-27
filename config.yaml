@@ -10,7 +10,7 @@ thresholds:
   supply_chain_specificity: 0.55 # G-Eval: actionable identifiers present?
   answer_completeness: 0.55     # G-Eval: all context details covered?
 
-output_dir: results
+output_dir: output
 
 # null = run all cases; set an integer to limit (e.g. max_cases: 3)
 max_cases: null

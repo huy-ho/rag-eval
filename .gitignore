@@ -8,7 +8,7 @@ __pycache__/
 venv/
 
 # Evaluation outputs
-results/
+output/
 
 # IDE
 .vscode/
@@ -17,7 +17,3 @@ results/
 # Tool internals
 .claude/
 .deepeval/
-
-# Legacy one-off output files
-results.csv
-results.xlsx
