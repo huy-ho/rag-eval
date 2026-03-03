@@ -1,4 +1,5 @@
 # mock_data.py
+# ALL THESE DATA ARE CISCO PUBLIC DATA THAT CAN BE FOUND ONLINE
 # Simulates the output of your RAG pipeline:
 #   - question: user query
 #   - contexts: chunks retrieved from Weaviate (the "source of truth")
