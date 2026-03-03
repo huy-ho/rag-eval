@@ -9,11 +9,25 @@ thresholds:
   hallucination: 0.0            # zero-tolerance: any invented fact is a failure
   supply_chain_specificity: 0.55 # G-Eval: actionable identifiers present?
   answer_completeness: 0.55     # G-Eval: all context details covered?
+  answer_correctness: 0.60      # G-Eval: factual match against ground truth
+
+# Weights for the 0-100 Health Score. Must sum to 1.0.
+# Tune these to reflect what matters most for your use case.
+weights:
+  faithfulness: 0.18
+  answer_correctness: 0.18
+  answer_relevancy: 0.13
+  hallucination: 0.13
+  contextual_precision: 0.09
+  contextual_recall: 0.09
+  contextual_relevancy: 0.07
+  supply_chain_specificity: 0.07
+  answer_completeness: 0.06
 
 output_dir: output
 
 # null = run all cases; set an integer to limit (e.g. max_cases: 3)
-max_cases: null
+max_cases: 3
 
 # null = use built-in mock dataset; set a file path for custom data
 # Supported formats: .csv, .json, .jsonl
