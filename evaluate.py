@@ -399,6 +399,78 @@ def find_previous_run(current_run_dir: Path) -> dict | None:
         return json.load(f)
 
 
+def build_full_report(eval_results, df: pd.DataFrame, run_info: dict) -> dict:
+    """Build a single comprehensive dict that captures everything in one place.
+
+    Structure:
+      run metadata  — id, model, scores, thresholds, weights
+      metric_stats  — avg/min/max/std + pass/fail per metric
+      failures      — flat list of every metric failure with reasons
+      test_cases    — per-question scores and reasons for every metric
+    """
+    cols = [c for c in METRIC_COLS if c in df.columns]
+
+    # Per-metric aggregate statistics
+    metric_stats = {}
+    for col in cols:
+        vals = df[col].dropna().tolist()
+        if not vals:
+            continue
+        avg = statistics.mean(vals)
+        metric_stats[col] = {
+            "avg":            round(avg, 4),
+            "min":            round(min(vals), 4),
+            "max":            round(max(vals), 4),
+            "std":            round(statistics.stdev(vals) if len(vals) > 1 else 0.0, 4),
+            "threshold":      THRESHOLDS.get(col),
+            "passed":         _metric_passes_aggregate(col, avg),
+            "lower_is_better": col in _LOWER_IS_BETTER,
+        }
+
+    # Per-test-case detail with every metric score + reason
+    test_cases_out = []
+    for result in eval_results.test_results:
+        ctx = result.retrieval_context
+        metrics = {}
+        for md in result.metrics_data:
+            key = md.name.lower().replace(" ", "_")
+            metrics[key] = {
+                "score":  round(md.score, 4) if md.score is not None else None,
+                "passed": md.success,
+                "reason": md.reason,
+            }
+        test_cases_out.append({
+            "question":          result.input,
+            "answer":            result.actual_output,
+            "ground_truth":      result.expected_output,
+            "retrieval_context": ctx if isinstance(ctx, list) else ([ctx] if ctx else []),
+            "passed":            result.success,
+            "metrics":           metrics,
+        })
+
+    # Flat failure list (easy to scan without digging into test_cases)
+    failures = []
+    for result in eval_results.test_results:
+        for md in result.metrics_data:
+            if md.score is not None and md.success is False:
+                key = md.name.lower().replace(" ", "_")
+                failures.append({
+                    "question":  result.input,
+                    "metric":    md.name,
+                    "score":     round(md.score, 4),
+                    "threshold": THRESHOLDS.get(key),
+                    "reason":    md.reason,
+                })
+
+    return {
+        **run_info,
+        "weights":      WEIGHTS,
+        "metric_stats": metric_stats,
+        "failures":     failures,
+        "test_cases":   test_cases_out,
+    }
+
+
 def _metric_passes_aggregate(col: str, avg: float) -> bool:
     threshold = THRESHOLDS.get(col, 0.5)
     if col in _LOWER_IS_BETTER:
@@ -578,12 +650,7 @@ if __name__ == "__main__":
         failures_df.to_excel(writer, sheet_name="Failures", index=False)
     logger.info("Excel saved → %s", xlsx_path)
 
-    # --- Save JSON results ---
-    json_path = run_dir / "results.json"
-    df.to_json(json_path, orient="records", indent=2, default_handler=str)
-    logger.info("JSON results saved → %s", json_path)
-
-    # --- Save run_info.json ---
+    # --- Build shared metadata ---
     pass_rate = float(df["passed"].mean()) if not df.empty else 0.0
     run_info = {
         "run_id":           run_id,
@@ -595,6 +662,15 @@ if __name__ == "__main__":
         "health_score":     health_score,
         "duration_seconds": round(duration, 2),
     }
+
+    # --- Save results.json (full report — everything in one place) ---
+    json_path = run_dir / "results.json"
+    report = build_full_report(eval_results, df, run_info)
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2, default=str)
+    logger.info("Results saved → %s", json_path)
+
+    # --- Save run_info.json (lightweight metadata for regression detection) ---
     run_info_path = run_dir / "run_info.json"
     with open(run_info_path, "w", encoding="utf-8") as f:
         json.dump(run_info, f, indent=2)
