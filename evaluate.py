@@ -543,6 +543,7 @@ def print_summary(
     logger.info("\n" + "=" * 80)
     logger.info("METRIC STATISTICS")
     logger.info("=" * 80)
+    prev_avgs = (prev_info or {}).get("metric_avgs", {})
     for col in cols:
         vals = df[col].dropna().tolist()
         if not vals:
@@ -554,10 +555,21 @@ def print_summary(
         threshold = THRESHOLDS.get(col, 0.5)
         status = "PASS" if _metric_passes_aggregate(col, avg) else "FAIL"
         direction = "(lower=better)" if col in _LOWER_IS_BETTER else ""
+
+        delta_str = ""
+        if col in prev_avgs:
+            delta = avg - prev_avgs[col]
+            sign = "+" if delta >= 0 else ""
+            if col in _LOWER_IS_BETTER:
+                verdict = "IMPROVED" if delta < -0.01 else ("REGRESSED" if delta > 0.01 else "STABLE")
+            else:
+                verdict = "IMPROVED" if delta > 0.01 else ("REGRESSED" if delta < -0.01 else "STABLE")
+            delta_str = f"  d={sign}{delta:.3f} {verdict}"
+
         logger.info(
             "  %s  %-25s  avg=%.3f  min=%.3f  max=%.3f  std=%.3f  "
-            "(threshold: %s) %s",
-            status, col, avg, mn, mx, std, threshold, direction,
+            "(threshold: %s) %s%s",
+            status, col, avg, mn, mx, std, threshold, direction, delta_str,
         )
 
     # --- Failure diagnosis ---
@@ -652,6 +664,11 @@ if __name__ == "__main__":
 
     # --- Build shared metadata ---
     pass_rate = float(df["passed"].mean()) if not df.empty else 0.0
+    metric_avgs = {
+        col: round(float(df[col].mean()), 4)
+        for col in METRIC_COLS
+        if col in df.columns and df[col].notna().any()
+    }
     run_info = {
         "run_id":           run_id,
         "model":            CONFIG["model"],
@@ -660,6 +677,7 @@ if __name__ == "__main__":
         "thresholds":       THRESHOLDS,
         "pass_rate":        round(pass_rate, 4),
         "health_score":     health_score,
+        "metric_avgs":      metric_avgs,
         "duration_seconds": round(duration, 2),
     }
 
